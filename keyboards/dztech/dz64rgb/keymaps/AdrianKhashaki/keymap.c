@@ -22,17 +22,13 @@ if (record->event.pressed) { \
 }                            \
 break;
 
-#define WITHOUT_SHIFT(upper, lower)        \
-({                                         \
-    uint8_t mods_ = get_mods();            \
-    if ((mods_ & MOD_MASK_SHIFT) > 0) {    \
-        clear_mods();                      \
-        upper;                             \
-        set_mods(mods_);                   \
-    }                                      \
-    else {                                 \
-        lower;                             \
-    }                                      \
+#define WITHOUT_SHIFT(upper, lower)          \
+({                                           \
+    uint8_t mods_ = get_mods();              \
+    clear_mods();                            \
+    if ((mods_ & MOD_MASK_SHIFT) > 0) upper; \
+    else lower;                              \
+    set_mods(mods_);                         \
 })
 
 enum custom_keycodes {
