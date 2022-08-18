@@ -16,19 +16,59 @@
  
 #include QMK_KEYBOARD_H
 
-#define CASE_DOWN(code)      \
-if (record->event.pressed) { \
-    code;                    \
-}                            \
+#define RESPECT_NON_SHIFT_MODS(code)      \
+({                                        \
+    if ((get_mods() & MOD_MASK_CAG) == 0) \
+        code;                             \
+})
+
+#define CASE_DOWN(code)           \
+if (record->event.pressed) {      \
+    RESPECT_NON_SHIFT_MODS(code); \
+}                                 \
 break;
 
-#define WITHOUT_SHIFT(upper, lower)          \
-({                                           \
-    uint8_t mods_ = get_mods();              \
-    clear_mods();                            \
-    if ((mods_ & MOD_MASK_SHIFT) > 0) upper; \
-    else lower;                              \
-    set_mods(mods_);                         \
+#define WITH_NUM(code)                         \
+({                                             \
+    if (!host_keyboard_led_state().num_lock) { \
+        register_code(KC_NUM);                 \
+        unregister_code(KC_NUM);               \
+        code;                                  \
+        register_code(KC_NUM);                 \
+        unregister_code(KC_NUM);               \
+    }                                          \
+    else code;                                 \
+})
+
+#define WITHOUT_SHIFT(upper, lower)     \
+({                                      \
+    uint8_t mods_ = get_mods();         \
+    if ((mods_ & MOD_MASK_SHIFT) > 0) { \
+        clear_mods();                   \
+        upper;                          \
+        set_mods(mods_);                \
+    }                                   \
+    else lower;                         \
+})
+
+#define WITHOUT_CAPS(upper, lower)             \
+({                                             \
+    if (host_keyboard_led_state().caps_lock) { \
+        register_code(KC_CAPS);                \
+        unregister_code(KC_CAPS);              \
+        upper;                                 \
+        register_code(KC_CAPS);                \
+        unregister_code(KC_CAPS);              \
+    }                                          \
+    else lower;                                \
+})
+
+#define WITHOUT_UPPER(upper, lower) \
+({                                  \
+    WITHOUT_SHIFT(                  \
+        WITHOUT_CAPS(lower, upper), \
+        WITHOUT_CAPS(upper, lower)  \
+    );                              \
 })
 
 enum custom_keycodes {
@@ -47,52 +87,52 @@ enum custom_keycodes {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case AE_WIN:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITH_NUM(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P4) SS_TAP(X_P2))),
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P3) SS_TAP(X_P2))))
-            )
+            ))
         case AE_MAC:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_LSFT(SS_TAP(X_A))),
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_TAP(X_A)))
             )
         case OE_WIN:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITH_NUM(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P5) SS_TAP(X_P3))),
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P4) SS_TAP(X_P8))))
-            )
+            ))
         case OE_MAC:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_LSFT(SS_TAP(X_O))),
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_TAP(X_O)))
             )
         case UE_WIN:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITH_NUM(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P5) SS_TAP(X_P4))),
                 SEND_STRING(SS_LALT(SS_TAP(X_P1) SS_TAP(X_P2) SS_TAP(X_P9))))
-            )
+            ))
         case UE_MAC:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_LSFT(SS_TAP(X_U))),
                 SEND_STRING(SS_LALT(SS_TAP(X_U)) SS_TAP(X_U)))
             )
         case SZ_WIN:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITH_NUM(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_P0) SS_TAP(X_P2) SS_TAP(X_P2) SS_TAP(X_P3))),
                 SEND_STRING(SS_LALT(SS_TAP(X_P0) SS_TAP(X_P2) SS_TAP(X_P2) SS_TAP(X_P3))))
-            )
+            ))
         case SZ_MAC:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_S))),
                 SEND_STRING(SS_LALT(SS_TAP(X_S))))
             )
         case EU_WIN:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITH_NUM(WITHOUT_UPPER(
                 SEND_STRING(SS_LALT(SS_TAP(X_P0) SS_TAP(X_P1) SS_TAP(X_P2) SS_TAP(X_P8))),
                 SEND_STRING(SS_LALT(SS_TAP(X_P0) SS_TAP(X_P1) SS_TAP(X_P2) SS_TAP(X_P8))))
-            )
+            ))
         case EU_MAC:
-            CASE_DOWN(WITHOUT_SHIFT(
+            CASE_DOWN(WITHOUT_UPPER(
                 SEND_STRING(SS_LSFT(SS_LALT(SS_TAP(X_2)))),
                 SEND_STRING(SS_LSFT(SS_LALT(SS_TAP(X_2)))))
             )
